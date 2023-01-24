@@ -1,0 +1,27 @@
+{
+    "name": "webimpian/bayarcash-laravel",
+    "description": "Laravel package for Bayarcash Payment Gateway.",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Webimpian\\BayarcashLaravel\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "imanifaiz",
+            "email": "faiz5315@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Webimpian\\BayarcashLaravel\\BayarcashLaravelServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "require": {
+        "php": "^8.0"
+    }
+}
