@@ -20,6 +20,7 @@ class PaymentRequest extends FormRequest
             'order_no'        => 'required',
             'order_amount'    => 'required|numeric|min:1',
             'raw_website'     => 'nullable',
+            'return_url'      => 'nullable',
             'payment_gateway' => 'required',
         ];
 
