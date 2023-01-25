@@ -4,9 +4,9 @@ namespace Webimpian\BayarcashLaravel\Http\Controllers;
 
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Validation\ValidationException;
 use Webimpian\BayarcashLaravel\Http\Requests\PaymentRequest;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ConnectException;
 
 class PaymentController
 {
@@ -33,31 +33,38 @@ class PaymentController
      */
     public function requery(Request $request)
     {
-        $api_url = config('bayarcash-laravel.requery_transaction_url');
+        $api_url = config('bayarcash-laravel.requery_transaction_url');// . '/a';
 
-        $response = Http::withOptions([
-            'verify' => !app()->environment('local'),
-        ])
-            ->withToken(config('bayarcash-laravel.bearer_token'))
-            ->acceptJson()
-            ->post($api_url, [
-                'RefNo' => $request->RefNo,
+        try {
+            $client = new \GuzzleHttp\Client([
+                'verify' => !app()->environment('local'),
             ]);
 
-        $resultBody   = $response->json();
+            $request = $client->post($api_url, [
+                'headers' => [
+                    'Authorization' => ['Bearers ' . config('bayarcash-laravel.bearer_token')],
+                    'Accept'     => 'application/json',
+                ],
+                'form_params' => [
+                    'RefNo' => $request->RefNo,
+                ]
+            ]);
 
-        if ($response->failed()) {
-            throw new Exception($response->reason());
+            $statusCode = $request->getStatusCode();
+            $resultBody = json_decode($request->getBody()->getContents(), true);
+            $transactionsList = $resultBody['output']['transactionsList'];
+
+            $transaction = [];
+
+            if ($transactionsList['recordsListTotalRecordCount'] > 0) {
+                $transaction = $transactionsList['recordsListData'][0];
+            }
+
+            return $transaction;
+        } catch (ClientException $e) {
+            return $e->getResponse()->getBody()->getContents();
+        } catch (ConnectException $e) {
+            return 'Connection Error';
         }
-
-        if (!$resultBody) {
-            throw new Exception('Response Error');
-        }
-
-        $transactionsList = $resultBody['output']['transactionsList'];
-
-        return $transactionsList['recordsListTotalRecordCount'] > 0
-            ? $transactionsList['recordsListData'][0]
-            : [];
     }
 }
