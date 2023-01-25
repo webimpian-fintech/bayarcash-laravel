@@ -7,12 +7,10 @@
             "Webimpian\\BayarcashLaravel\\": "src/"
         }
     },
-    "authors": [
-        {
-            "name": "imanifaiz",
-            "email": "faiz5315@gmail.com"
-        }
-    ],
+    "authors": [{
+        "name": "imanifaiz",
+        "email": "faiz5315@gmail.com"
+    }],
     "extra": {
         "laravel": {
             "providers": [
@@ -22,6 +20,7 @@
     },
     "minimum-stability": "dev",
     "require": {
-        "php": "^8.0"
+        "php": "^7.2.5|^8.0",
+        "guzzlehttp/guzzle": "^7.5@dev"
     }
 }
