@@ -27,13 +27,13 @@ class PaymentController
     }
 
     /**
-     * @return int[]
+     * @return int[]|string
      * @throws \Illuminate\Validation\ValidationException
      * @throws \Exception
      */
     public function requery(Request $request)
     {
-        $api_url = config('bayarcash-laravel.requery_transaction_url');// . '/a';
+        $api_url = config('bayarcash-laravel.requery_transaction_url');
 
         try {
             $client = new \GuzzleHttp\Client([

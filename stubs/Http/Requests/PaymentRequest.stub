@@ -1,29 +1,70 @@
 <?php
 
-namespace App\Http\Requests;
+namespace Webimpian\BayarcashLaravel\Http\Controllers;
 
-use Illuminate\Foundation\Http\FormRequest;
+use Exception;
+use Illuminate\Http\Request;
+use Webimpian\BayarcashLaravel\Http\Requests\PaymentRequest;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ConnectException;
 
-class PaymentRequest extends FormRequest
+class PaymentController
 {
-    public function authorize()
+    /**
+     * @param \Webimpian\BayarcashLaravel\Http\Requests\PaymentRequest $request
+     * @return string|void
+     */
+    public function init(PaymentRequest $request)
     {
-        return true;
+        $api_url = config('bayarcash-laravel.fpx_transaction_url');
+
+        $data = $request->validated() + ['portal_key' => config('bayarcash-laravel.portal_key')];
+
+        return view('bayarcash-laravel::init-payment', [
+            'data'    => $data,
+            'api_url' => $api_url
+        ]);
     }
 
-    public function rules()
+    /**
+     * @return int[]|string
+     * @throws \Illuminate\Validation\ValidationException
+     * @throws \Exception
+     */
+    public function requery(Request $request)
     {
-        $rules = [
-            'payment_gateway' => 'required',
-            'order_no'        => 'required|regex:/^[A-Za-z0-9@\/\\\(\)\ \.\-\_\,\`\~\*\"\;\:]+$/i|max:40',
-            'order_amount'    => 'required|numeric|between:1.00,30000.00,regex:/^[0-9]*\.[0-9]{2}$/',
-            'buyer_name'      => 'required|regex:/^[A-Za-z0-9@\/\\\(\)\ \.\-\_\,\&\'\`\~\*\"\;\:]+$/i',
-            'buyer_email'     => 'required|email|max:50',
-            'buyer_tel_no'    => 'nullable|regex:/^(6?01)[0-46-9]*[0-9]{8,9}$/',
-            'return_url'      => 'nullable|url',
-            'raw_website'     => 'nullable',
-        ];
+        $api_url = config('bayarcash-laravel.requery_transaction_url');
 
-        return $rules;
+        try {
+            $client = new \GuzzleHttp\Client([
+                'verify' => !app()->environment('local'),
+            ]);
+
+            $request = $client->post($api_url, [
+                'headers' => [
+                    'Authorization' => ['Bearers ' . config('bayarcash-laravel.bearer_token')],
+                    'Accept'     => 'application/json',
+                ],
+                'form_params' => [
+                    'RefNo' => $request->RefNo,
+                ]
+            ]);
+
+            $statusCode = $request->getStatusCode();
+            $resultBody = json_decode($request->getBody()->getContents(), true);
+            $transactionsList = $resultBody['output']['transactionsList'];
+
+            $transaction = [];
+
+            if ($transactionsList['recordsListTotalRecordCount'] > 0) {
+                $transaction = $transactionsList['recordsListData'][0];
+            }
+
+            return $transaction;
+        } catch (ClientException $e) {
+            return $e->getResponse()->getBody()->getContents();
+        } catch (ConnectException $e) {
+            return 'Connection Error';
+        }
     }
 }
